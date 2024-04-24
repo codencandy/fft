@@ -59,7 +59,7 @@ unsanitize_fft
 #define fft_private_safe_addrof(ptr,i) ((ptr!=nullptr)?(&(ptr[i])):(nullptr))
 
 // For a 8-sample input, the FFT's last three bins contain "negative" frequencies. (So, the last (size/2)-1 bins.) They are only meaningful for complex inputs.
-void fft_core(double* input_real, double* input_imag, uint64_t size, uint64_t gap, double* output_real, double* output_imag, bool forwards)
+void fft_core(float* input_real, float* input_imag, uint64_t size, uint64_t gap, float* output_real, float* output_imag, bool forwards)
 {
     if(size == 1)
     {
@@ -78,16 +78,16 @@ void fft_core(double* input_real, double* input_imag, uint64_t size, uint64_t ga
         // non-combed decimated output to non-combed correlated output
         for(uint64_t i = 0; i < size/2; i++)
         {
-            double a_real = output_real[i];
-            double a_imag = output_imag[i];
-            double b_real = output_real[i+size/2];
-            double b_imag = output_imag[i+size/2];
+            float a_real = output_real[i];
+            float a_imag = output_imag[i];
+            float b_real = output_real[i+size/2];
+            float b_imag = output_imag[i+size/2];
             
-            double twiddle_real = cos(2*M_PI*i/size);
-            double twiddle_imag = sin(2*M_PI*i/size)*(forwards?-1:1);
+            float twiddle_real = cos(2*M_PI*i/size);
+            float twiddle_imag = sin(2*M_PI*i/size)*(forwards?-1:1);
             // complex multiplication (vector angle summing and length multiplication)
-            double bias_real = b_real*twiddle_real - b_imag*twiddle_imag;
-            double bias_imag = b_imag*twiddle_real + b_real*twiddle_imag;
+            float bias_real = b_real*twiddle_real - b_imag*twiddle_imag;
+            float bias_imag = b_imag*twiddle_real + b_real*twiddle_imag;
             // real output (sum of real parts)
             output_real[i       ] = a_real + bias_real;
             output_real[i+size/2] = a_real - bias_real;
@@ -102,7 +102,7 @@ void fft_core(double* input_real, double* input_imag, uint64_t size, uint64_t ga
 
 #ifndef FFT_CORE_ONLY
 
-void normalize_fft(double* input_real, double* input_imag, uint64_t size)
+void normalize_fft(float* input_real, float* input_imag, uint64_t size)
 {
     for(uint64_t i = 0; i < size; i++)
     {
@@ -110,7 +110,7 @@ void normalize_fft(double* input_real, double* input_imag, uint64_t size)
         input_imag[i] /= size;
     }
 }
-void half_normalize_fft(double* input_real, double* input_imag, uint64_t size)
+void half_normalize_fft(float* input_real, float* input_imag, uint64_t size)
 {
     for(uint64_t i = 0; i < size; i++)
     {
@@ -118,12 +118,12 @@ void half_normalize_fft(double* input_real, double* input_imag, uint64_t size)
         input_imag[i] /= sqrt(size);
     }
 }
-void fft(double* input_real, double* input_imag, uint64_t size, double* output_real, double* output_imag)
+void fft(float* input_real, float* input_imag, uint64_t size, float* output_real, float* output_imag)
 {
     fft_core(input_real, input_imag, size, 1, output_real, output_imag, 1);
     half_normalize_fft(output_real, output_imag, size); // allows calling fft() four times to result in the original signal with no amplitude change
 }
-void ifft(double* input_real, double* input_imag, uint64_t size, double* output_real, double* output_imag)
+void ifft(float* input_real, float* input_imag, uint64_t size, float* output_real, float* output_imag)
 {
     fft_core(input_real, input_imag, size, 1, output_real, output_imag, 0);
     half_normalize_fft(output_real, output_imag, size); // see above, also causes ifft(fft(x)) to result in the original signal with no amplitude change
@@ -132,7 +132,7 @@ void ifft(double* input_real, double* input_imag, uint64_t size, double* output_
 // boost bins that are split into positive (A-handed spin) and negative (B-handed spin) parts
 // only useful if former input signal was not complex, for only needing to look at one bin to get the magnitude
 // FIXME or HELPME: How come the nyquist frequency is quiet in saw waves, but loud in pure signal?
-void sanitize_fft(double* input_real, double* input_imag, uint64_t size)
+void sanitize_fft(float* input_real, float* input_imag, uint64_t size)
 {
     for(uint64_t i = 1; i < size/2; i++)
     {
@@ -143,7 +143,7 @@ void sanitize_fft(double* input_real, double* input_imag, uint64_t size)
     }
 }
 // opposite of above
-void unsanitize_fft(double* input_real, double* input_imag, uint64_t size)
+void unsanitize_fft(float* input_real, float* input_imag, uint64_t size)
 {
     for(uint64_t i = 1; i < size/2; i++)
     {
